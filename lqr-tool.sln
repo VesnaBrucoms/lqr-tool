@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31624.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lqr-tool", "lqr-tool.csproj", "{5CDA04F9-E8DC-40CE-A008-5F4AC31706A1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CDA04F9-E8DC-40CE-A008-5F4AC31706A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CDA04F9-E8DC-40CE-A008-5F4AC31706A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CDA04F9-E8DC-40CE-A008-5F4AC31706A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CDA04F9-E8DC-40CE-A008-5F4AC31706A1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C81C68BE-0E2E-45D6-AE3C-FA0A0E2840C8}
+	EndGlobalSection
+EndGlobal
