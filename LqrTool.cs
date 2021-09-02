@@ -7,7 +7,7 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Dialogue.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Buildings.lqr");
 
             Console.WriteLine(BitConverter.ToInt32(bytes, 0));
             Console.WriteLine(BitConverter.ToInt32(bytes, 4));
@@ -23,11 +23,19 @@ namespace lqr_tool
             Console.WriteLine("entriesOffset: " + entriesOffset);
 
             // 5 fields that inform how to read the table?
-            Console.WriteLine(BitConverter.ToInt32(bytes, 48)); // Number of columns?
-            Console.WriteLine(BitConverter.ToInt32(bytes, 52));
-            Console.WriteLine(BitConverter.ToInt32(bytes, 56));
-            Console.WriteLine(BitConverter.ToInt32(bytes, 60));
-            Console.WriteLine(BitConverter.ToInt32(bytes, 64));
+            int numberOfColumns = BitConverter.ToInt32(bytes, 48);
+            Console.WriteLine("numberOfColumns: " + BitConverter.ToInt32(bytes, 48));
+            for (int i = 0; i < numberOfColumns; i++)
+            {
+                Console.WriteLine("type: " + BitConverter.ToInt32(bytes, 52 + (4 * i)));
+
+                // TYPES:
+                // 0 = unknown (4 bytes)
+                // 1 = unknown
+                // 2 = string? (x bytes) so far seen for in-game text
+                // 3 = int32   (4 bytes)
+                // 4 = string? (x bytes) so far seen for file names
+            }
 
             int usedEntries = BitConverter.ToInt32(bytes, entriesPointer);
             Console.WriteLine("\nusedEntries: " + usedEntries);
