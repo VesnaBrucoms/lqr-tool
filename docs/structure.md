@@ -6,6 +6,7 @@ LQR files are broken down into at least five sections:
 * table rows
 * unknown
 * unknown
+* text
 
 ## Header
 
@@ -13,12 +14,12 @@ The header stores the checksum, offsets, and column definitions.
 
 | Type  | Bytes | Name         | Description                                      |
 | ----- | ----- | ------------ | ------------------------------------------------ |
-| int32 | 4	    | unknown      | Alway `106`                                      |
+| int32 | 4	    | unknown      | Always `106`                                     |
 | int32	| 4	    | unknown      | Possibly checksum                                |
 | long	| 8	    | columnOffset | Offset to `rowsOffset` and the column definition |
 | long	| 8	    | offset       | Number of text entries in the file               |
 | long	| 8	    | offset       | Number of text entries in the file               |
-| long	| 8	    | offset       | Number of text entries in the file               |
+| long	| 8	    | textOffset   | Offset to the start of the text section          |
 | long	| 8	    | rowsOffset   | Offset to the start of the table rows section    |
 
 ## Column Definition
@@ -98,3 +99,24 @@ For `dataType == 4`:
 | byte	                        | 1	    | unknown        |
 | int32	                        | 4	    | characterCount |
 | string (UTF-16 little endian) | x     | text           |
+
+## Unknown
+
+Under investigation...
+
+## Unknown
+
+Under investigation...
+
+## Text
+
+Here is where text related to the table is stored. Such as column headings, but also UI text and what appears to be
+internal string IDs.
+
+This section is simply an array of UTF-16 strings:
+
+| Type                          | Bytes | Name           | Description                                 |
+| ----------------------------- | ----- | -------------- | ------------------------------------------- |
+| int32	                        | 4	    | length         | The size of the array                       |
+| int32	                        | 4	    | bytes          | Total number of bytes taken up by the array |
+| string (UTF-16 little endian) | x     | text           | The array of strings                        |

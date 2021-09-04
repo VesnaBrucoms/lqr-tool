@@ -7,7 +7,7 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Text.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Units.lqr");
 
             Console.WriteLine(BitConverter.ToInt32(bytes, 0)); // always 106
             Console.WriteLine(BitConverter.ToInt32(bytes, 4)); // checksum?
@@ -17,8 +17,8 @@ namespace lqr_tool
             Console.WriteLine("afterOffset: " + afterOffset); // offset -> after entries
             long unknownOffset1 = BitConverter.ToInt64(bytes, 24);
             Console.WriteLine("unknownOffset1: " + unknownOffset1); // offset -> unknown
-            long unknownOffset2 = BitConverter.ToInt64(bytes, 32);
-            Console.WriteLine("unknownOffset2: " + unknownOffset2); // offset -> labels? column headings
+            long textOffset = BitConverter.ToInt64(bytes, 32);
+            Console.WriteLine("textOffset: " + textOffset); // table text, column headings, interface text
             long rowsOffset = BitConverter.ToInt64(bytes, 40);
             int rowsPointer = (int)rowsOffset;
             Console.WriteLine("rowsOffset: " + rowsOffset);
@@ -108,6 +108,38 @@ namespace lqr_tool
                         rowsPointer += charsInFollowingString2 * 2;
                     }
                 }
+            }
+
+            int textPointer = (int)textOffset;
+
+            int textCount = BitConverter.ToInt32(bytes, textPointer);
+            Console.WriteLine("\ntextCount: " + textCount);
+            textPointer += 4;
+            int byteCount = BitConverter.ToInt32(bytes, textPointer);
+            Console.WriteLine("byteCount: " + byteCount);
+            textPointer += 4;
+
+            string[] strings = new string[textCount];
+            for (int i = 0; i < textCount; i++)
+            {
+                string newString = "";
+                bool isTerminator = false;
+                while (!isTerminator)
+                {
+                    char character = BitConverter.ToChar(bytes, textPointer);
+                    textPointer += 2;
+                    if (character == '\0')
+                    {
+                        isTerminator = true;
+                        strings[i] = newString;
+                        continue;
+                    }
+                    else
+                    {
+                        newString += character;
+                    }
+                }
+                Console.WriteLine(newString);
             }
 
             Console.ReadKey();
