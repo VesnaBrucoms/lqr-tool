@@ -7,22 +7,22 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Clans.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Text.lqr");
 
-            Console.WriteLine(BitConverter.ToInt32(bytes, 0));
-            Console.WriteLine(BitConverter.ToInt32(bytes, 4));
-            Console.WriteLine(BitConverter.ToInt64(bytes, 8)); // entries offset offset?
+            Console.WriteLine(BitConverter.ToInt32(bytes, 0)); // always 106
+            Console.WriteLine(BitConverter.ToInt32(bytes, 4)); // checksum?
+            long columnOffset = BitConverter.ToInt64(bytes, 8);
+            Console.WriteLine("columnOffset: " + columnOffset);
             long afterOffset = BitConverter.ToInt64(bytes, 16);
             Console.WriteLine("afterOffset: " + afterOffset); // offset -> after entries
             long unknownOffset1 = BitConverter.ToInt64(bytes, 24);
             Console.WriteLine("unknownOffset1: " + unknownOffset1); // offset -> unknown
             long unknownOffset2 = BitConverter.ToInt64(bytes, 32);
             Console.WriteLine("unknownOffset2: " + unknownOffset2); // offset -> labels? column headings
-            long entriesOffset = BitConverter.ToInt64(bytes, 40);
-            int entriesPointer = (int)entriesOffset;
-            Console.WriteLine("entriesOffset: " + entriesOffset);
+            long rowsOffset = BitConverter.ToInt64(bytes, 40);
+            int rowsPointer = (int)rowsOffset;
+            Console.WriteLine("rowsOffset: " + rowsOffset);
 
-            // 5 fields that inform how to read the table?
             int numberOfColumns = BitConverter.ToInt32(bytes, 48);
             Console.WriteLine("numberOfColumns: " + BitConverter.ToInt32(bytes, 48));
             int[] columnTypes = new int[numberOfColumns];
@@ -30,75 +30,82 @@ namespace lqr_tool
             {
                 columnTypes[i] = BitConverter.ToInt32(bytes, 52 + (4 * i));
                 Console.WriteLine("type for col " + i + ": " + columnTypes[i]);
-
-                // TYPES:
-                // 0 = int32? (4 bytes)
-                // 1 = float? (4 bytes)
-                // 2 = string? (x bytes) so far seen for in-game text, there's an extra byte after the terminator
-                // 3 = uint32?   (4 bytes)
-                // 4 = string? (x bytes) so far seen for file names
             }
 
-            int usedEntries = BitConverter.ToInt32(bytes, entriesPointer);
+            int usedEntries = BitConverter.ToInt32(bytes, rowsPointer);
             Console.WriteLine("\nusedEntries: " + usedEntries);
-            entriesPointer += 4;
+            rowsPointer += 4;
 
-            int totalEntries = BitConverter.ToInt32(bytes, entriesPointer);
+            int totalEntries = BitConverter.ToInt32(bytes, rowsPointer);
             Console.WriteLine("totalEntries: " + totalEntries);
-            entriesPointer += 4;
+            rowsPointer += 4;
 
             for (int i = 0; i < totalEntries; i++)
             {
-                int fileId = BitConverter.ToInt32(bytes, entriesPointer);
+                int fileId = BitConverter.ToInt32(bytes, rowsPointer);
                 Console.WriteLine("\nfileId: " + fileId);
-                entriesPointer += 4;
-                Boolean isEnabled = BitConverter.ToBoolean(bytes, entriesPointer);
+                rowsPointer += 4;
+                Boolean isEnabled = BitConverter.ToBoolean(bytes, rowsPointer);
                 Console.WriteLine("isEnabled: " + isEnabled);
-                entriesPointer += 1;
+                rowsPointer += 1;
                 if (!isEnabled)
                 {
                     Console.WriteLine("DELETED/UNUSED ENTRY");
                     continue;
                 }
-                Boolean unknown = BitConverter.ToBoolean(bytes, entriesPointer);
-                Console.WriteLine("unknown: " + unknown);
-                entriesPointer += 1;
 
-                foreach (int column in columnTypes)
+                for (int j = 0; j < columnTypes.Length; j++)
                 {
-                    if (column == 0)
+                    if (columnTypes[j] == 0)
                     {
-                        Console.WriteLine("col type 0: " + BitConverter.ToInt32(bytes, entriesPointer));
-                        entriesPointer += 4;
-                    } else if (column == 1)
-                    {
-                        Console.WriteLine("col type 1: " + BitConverter.ToSingle(bytes, entriesPointer));
-                        entriesPointer += 4;
+                        Console.WriteLine("col type 0: " + BitConverter.ToInt32(bytes, rowsPointer));
+                        rowsPointer += 4;
                     }
-                    else if (column == 2)
+                    else if (columnTypes[j] == 1)
                     {
-                        int charsInFollowingString2 = BitConverter.ToInt32(bytes, entriesPointer);
-                        entriesPointer += 4;
+                        Console.WriteLine("col type 1: " + BitConverter.ToSingle(bytes, rowsPointer));
+                        rowsPointer += 4;
+                    }
+                    else if (columnTypes[j] == 2)
+                    {
+                        byte unknownByte = bytes[rowsPointer];
+                        Console.WriteLine("unknown spacer?: " + unknownByte);
+                        rowsPointer += 1;
+                        if (unknownByte > 0)
+                        {
+                            Console.WriteLine("UNKNOWN IS: " + unknownByte);
+                        }
+
+                        int charsInFollowingString2 = BitConverter.ToInt32(bytes, rowsPointer);
+                        rowsPointer += 4;
                         Console.WriteLine("characterCount: " + charsInFollowingString2);
                         byte[] fileName2 = new byte[charsInFollowingString2 * 2];
-                        Array.Copy(bytes, entriesPointer, fileName2, 0, charsInFollowingString2 * 2);
+                        Array.Copy(bytes, rowsPointer, fileName2, 0, charsInFollowingString2 * 2);
                         Console.WriteLine(GetUnicode(fileName2));
-                        entriesPointer += charsInFollowingString2 * 2;
+                        rowsPointer += charsInFollowingString2 * 2;
                     }
-                    else if (column == 3)
+                    else if (columnTypes[j] == 3)
                     {
-                        Console.WriteLine("col type 3: " + BitConverter.ToInt32(bytes, entriesPointer));
-                        entriesPointer += 4;
+                        Console.WriteLine("col type 3: " + BitConverter.ToInt32(bytes, rowsPointer));
+                        rowsPointer += 4;
                     }
-                    else if (column == 4)
+                    else if (columnTypes[j] == 4)
                     {
-                        int charsInFollowingString2 = BitConverter.ToInt32(bytes, entriesPointer);
-                        entriesPointer += 4;
+                        byte unknownByte = bytes[rowsPointer];
+                        Console.WriteLine("unknown spacer?: " + unknownByte);
+                        rowsPointer += 1;
+                        if (unknownByte > 0)
+                        {
+                            Console.WriteLine("UNKNOWN IS: " + unknownByte);
+                        }
+
+                        int charsInFollowingString2 = BitConverter.ToInt32(bytes, rowsPointer);
+                        rowsPointer += 4;
                         Console.WriteLine("characterCount: " + charsInFollowingString2);
                         byte[] fileName2 = new byte[charsInFollowingString2 * 2];
-                        Array.Copy(bytes, entriesPointer, fileName2, 0, charsInFollowingString2 * 2);
+                        Array.Copy(bytes, rowsPointer, fileName2, 0, charsInFollowingString2 * 2);
                         Console.WriteLine(GetUnicode(fileName2));
-                        entriesPointer += charsInFollowingString2 * 2;
+                        rowsPointer += charsInFollowingString2 * 2;
                     }
                 }
             }

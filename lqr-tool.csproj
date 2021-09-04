@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="docs\structure.md" />
     <None Include="README.md" />
     <None Include="testData\Database\Actors.lqr" />
     <None Include="testData\Database\AIBuildingClasses.lqr" />
