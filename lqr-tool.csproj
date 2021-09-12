@@ -44,6 +44,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LqrTool.cs" />
+    <Compile Include="Models\Column.cs" />
+    <Compile Include="Models\FloatColumn.cs" />
+    <Compile Include="Models\IntColumn.cs" />
+    <Compile Include="Models\Row.cs" />
+    <Compile Include="Models\StringColumn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

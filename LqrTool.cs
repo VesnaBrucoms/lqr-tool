@@ -7,7 +7,7 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Units.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Levels.lqr");
 
             Console.WriteLine(BitConverter.ToInt32(bytes, 0)); // always 106
             Console.WriteLine(BitConverter.ToInt32(bytes, 4)); // checksum?
@@ -18,7 +18,7 @@ namespace lqr_tool
             long unknownOffset1 = BitConverter.ToInt64(bytes, 24);
             Console.WriteLine("unknownOffset1: " + unknownOffset1); // offset -> unknown
             long textOffset = BitConverter.ToInt64(bytes, 32);
-            Console.WriteLine("textOffset: " + textOffset); // table text, column headings, interface text
+            Console.WriteLine("textOffset: " + textOffset);
             long rowsOffset = BitConverter.ToInt64(bytes, 40);
             int rowsPointer = (int)rowsOffset;
             Console.WriteLine("rowsOffset: " + rowsOffset);
@@ -108,6 +108,53 @@ namespace lqr_tool
                         rowsPointer += charsInFollowingString2 * 2;
                     }
                 }
+            }
+
+            //NEXT BIT
+            int afterPointer = (int)afterOffset;
+
+            // block of five flags? typically 0 or 1
+            Console.WriteLine("\n" + bytes[afterPointer]);
+            afterPointer += 1;
+            Console.WriteLine(bytes[afterPointer]);
+            afterPointer += 1;
+            Console.WriteLine(bytes[afterPointer]);
+            afterPointer += 1;
+            Console.WriteLine(bytes[afterPointer]);
+            afterPointer += 1;
+            Console.WriteLine(bytes[afterPointer]);
+            afterPointer += 1;
+
+            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
+            afterPointer += 4;
+            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
+            afterPointer += 4;
+            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
+            afterPointer += 4;
+            Console.WriteLine("usedEntries: " + BitConverter.ToInt32(bytes, afterPointer)); // why is this repeated?
+            afterPointer += 4;
+            Console.WriteLine("numberOfColumns: " + BitConverter.ToInt32(bytes, afterPointer)); // why is this repeated?
+            afterPointer += 4;
+            for (int i = 0; i < 49; i++)
+            {
+                Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
+                afterPointer += 4;
+            }
+
+            // 1 byte followed by a lot of integers?
+            int unknown1Pointer = (int)unknownOffset1;
+
+            Console.WriteLine("\n" + bytes[unknown1Pointer]);
+            unknown1Pointer += 1;
+            while (unknown1Pointer != textOffset)
+            {
+                int unknown = BitConverter.ToInt32(bytes, unknown1Pointer);
+                Console.WriteLine(unknown);
+                if (unknown == 0xFFFF)
+                {
+                    Console.WriteLine("\n");
+                }
+                unknown1Pointer += 4;
             }
 
             int textPointer = (int)textOffset;
