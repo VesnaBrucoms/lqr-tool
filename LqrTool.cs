@@ -131,16 +131,19 @@ namespace lqr_tool
             afterPointer += 4;
             Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
             afterPointer += 4;
-            Console.WriteLine("usedEntries: " + BitConverter.ToInt32(bytes, afterPointer)); // why is this repeated?
+            int usedEntries2 = BitConverter.ToInt32(bytes, afterPointer);
+            Console.WriteLine("usedEntries: " + usedEntries2); // this + no of columns indicates integers to read in this section
             afterPointer += 4;
-            Console.WriteLine("numberOfColumns: " + BitConverter.ToInt32(bytes, afterPointer)); // why is this repeated?
+            int noColumns2 = BitConverter.ToInt32(bytes, afterPointer);
+            Console.WriteLine("numberOfColumns: " + noColumns2); // this + used entries indicates integers to read in this section
             afterPointer += 4;
-            for (int i = 0; i < 49; i++)
+            for (int i = 0; i < (usedEntries2 + noColumns2); i++)
             {
                 Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
                 afterPointer += 4;
             }
 
+            // NEXT BIT 2
             // 1 byte followed by a lot of integers?
             int unknown1Pointer = (int)unknownOffset1;
 
@@ -157,6 +160,7 @@ namespace lqr_tool
                 unknown1Pointer += 4;
             }
 
+            // TEXT
             int textPointer = (int)textOffset;
 
             int textCount = BitConverter.ToInt32(bytes, textPointer);

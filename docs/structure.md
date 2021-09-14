@@ -100,13 +100,39 @@ For `dataType == 4`:
 | int32	                        | 4	    | characterCount |
 | string (UTF-16 little endian) | x     | text           |
 
-## Unknown
+## Text Indices
 
-Under investigation...
+This section stores the indices of the text in the Text section. The text ranges from row names to column names and other
+useful text.
 
-## Unknown
+The section begins similarly for every table:
 
-Under investigation...
+| Type  | Bytes | Name        | Description                                   |
+| ----- | ----- | ----------- | --------------------------------------------- |
+| byte  | 1	    | unknown     |                                               |
+| byte	| 1	    | unknown     |                                               |
+| byte  | 1	    | unknown     |                                               |
+| byte  | 1	    | unknown     |                                               |
+| byte  | 1	    | unknown     |                                               |
+| int32 | 4	    | empty       | Index of an empty string                      |
+| int32 | 4	    | namePrefix  | Index of the prefix applied to every row name |
+| int32 | 4	    | tableName   | Index of the table name                       |
+| int32 | 4	    | enabledRows | Identical to the field in Table Rows          |
+| int32 | 4	    | columns     | Identical to the field in Column Definition   |
+
+The next set of integers is variable. The total number is `enabledRows` + `columns`, and always in that order.
+
+These are the row names followed by the column names:
+
+| Type  | Bytes           | Name       | Description                                                               |
+| ----- | --------------- | ---------- | ------------------------------------------------------------------------- |
+| int32 | 4*`enabledRows` | rowName    | Index of row name. Read in the same order as the rows in Table Rows       |
+| int32 | 4*`columns`     | columnName | Index of column name. Read in the same order as the columns in Table Rows |
+
+## UI Indices
+
+Under investigation... though is similar to Text Indices in that it gives the indices of UI text elements. Amongst other
+information that is likely UI related.
 
 ## Text
 
