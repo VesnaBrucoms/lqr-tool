@@ -7,7 +7,7 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Levels.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Text.lqr");
 
             Console.WriteLine(BitConverter.ToInt32(bytes, 0)); // always 106
             Console.WriteLine(BitConverter.ToInt32(bytes, 4)); // checksum?
@@ -110,7 +110,7 @@ namespace lqr_tool
                 }
             }
 
-            //NEXT BIT
+            // ROW AND COLUMN TEXT INDICES
             int afterPointer = (int)afterOffset;
 
             // block of five flags? typically 0 or 1
@@ -147,7 +147,7 @@ namespace lqr_tool
             // 1 byte followed by a lot of integers?
             int unknown1Pointer = (int)unknownOffset1;
 
-            Console.WriteLine("\n" + bytes[unknown1Pointer]);
+            Console.WriteLine("\n" + bytes[unknown1Pointer]); // External tool converter flag?
             unknown1Pointer += 1;
             while (unknown1Pointer != textOffset)
             {
@@ -190,7 +190,7 @@ namespace lqr_tool
                         newString += character;
                     }
                 }
-                Console.WriteLine(newString);
+                Console.WriteLine(i + ": " + newString);
             }
 
             Console.ReadKey();

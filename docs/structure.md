@@ -100,7 +100,7 @@ For `dataType == 4`:
 | int32	                        | 4	    | characterCount |
 | string (UTF-16 little endian) | x     | text           |
 
-## Text Indices
+## Row and Column Text Indices
 
 This section stores the indices of the text in the Text section. The text ranges from row names to column names and other
 useful text.
