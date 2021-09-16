@@ -12,15 +12,15 @@ LQR files are broken down into at least five sections:
 
 The header stores the checksum, offsets, and column definitions.
 
-| Type  | Bytes | Name         | Description                                      |
-| ----- | ----- | ------------ | ------------------------------------------------ |
-| int32 | 4	    | unknown      | Always `106`                                     |
-| int32	| 4	    | unknown      | Possibly checksum                                |
-| long	| 8	    | columnOffset | Offset to `rowsOffset` and the column definition |
-| long	| 8	    | offset       | Number of text entries in the file               |
-| long	| 8	    | offset       | Number of text entries in the file               |
-| long	| 8	    | textOffset   | Offset to the start of the text section          |
-| long	| 8	    | rowsOffset   | Offset to the start of the table rows section    |
+| Type  | Bytes | Name           | Description                                       |
+| ----- | ----- | -------------- | ------------------------------------------------- |
+| int32 | 4	    | unknown        | Always `106`                                      |
+| int32	| 4	    | unknown        | Possibly checksum                                 |
+| long	| 8	    | columnOffset   | Offset to `rowsOffset` and the column definition  |
+| long	| 8	    | headingsOffset | Offset to the start of the row and column section |
+| long	| 8	    | uiOffset       | Offset to the start of the UI text section        |
+| long	| 8	    | textOffset     | Offset to the start of the text section           |
+| long	| 8	    | rowsOffset     | Offset to the start of the table rows section     |
 
 ## Column Definition
 

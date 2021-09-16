@@ -1,4 +1,5 @@
-﻿using System;
+﻿using lqr_tool.Models;
+using System;
 using static System.IO.File;
 
 namespace lqr_tool
@@ -7,30 +8,31 @@ namespace lqr_tool
     {
         static void Main(string[] args)
         {
-            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Text.lqr");
+            byte[] bytes = ReadAllBytes("C:\\Users\\etste\\source\\repos\\lqr-tool\\testData\\Database\\Levels.lqr");
 
-            Console.WriteLine(BitConverter.ToInt32(bytes, 0)); // always 106
-            Console.WriteLine(BitConverter.ToInt32(bytes, 4)); // checksum?
-            long columnOffset = BitConverter.ToInt64(bytes, 8);
-            Console.WriteLine("columnOffset: " + columnOffset);
-            long afterOffset = BitConverter.ToInt64(bytes, 16);
-            Console.WriteLine("afterOffset: " + afterOffset); // offset -> after entries
-            long unknownOffset1 = BitConverter.ToInt64(bytes, 24);
-            Console.WriteLine("unknownOffset1: " + unknownOffset1); // offset -> unknown
-            long textOffset = BitConverter.ToInt64(bytes, 32);
-            Console.WriteLine("textOffset: " + textOffset);
-            long rowsOffset = BitConverter.ToInt64(bytes, 40);
-            int rowsPointer = (int)rowsOffset;
-            Console.WriteLine("rowsOffset: " + rowsOffset);
+            int pointer = 0;
 
-            int numberOfColumns = BitConverter.ToInt32(bytes, 48);
-            Console.WriteLine("numberOfColumns: " + BitConverter.ToInt32(bytes, 48));
-            int[] columnTypes = new int[numberOfColumns];
-            for (int i = 0; i < numberOfColumns; i++)
-            {
-                columnTypes[i] = BitConverter.ToInt32(bytes, 52 + (4 * i));
-                Console.WriteLine("type for col " + i + ": " + columnTypes[i]);
-            }
+            Header header = ReadHeader(bytes);
+            Console.WriteLine(header.ToString());
+
+            // COLUMN DEFINITION
+            pointer = (int)header.ColumnOffset + 8;
+            ColumnDefinition columns = ReadColumnDefinitions(pointer, bytes);
+            Console.WriteLine("\n" + columns.ToString());
+
+            // HEADINGS
+            pointer = (int)header.HeadingOffset;
+            Headings headings = ReadHeadings(pointer, bytes);
+            Console.WriteLine("\n" + headings.ToString());
+
+            // UI WILL GO HERE
+
+            // TEXT
+            pointer = (int)header.TextOffset;
+            string[] tableText = ReadTableText(pointer, bytes);
+
+            // ROWS
+            int rowsPointer = (int)header.RowsOffset;
 
             int usedEntries = BitConverter.ToInt32(bytes, rowsPointer);
             Console.WriteLine("\nusedEntries: " + usedEntries);
@@ -40,6 +42,7 @@ namespace lqr_tool
             Console.WriteLine("totalEntries: " + totalEntries);
             rowsPointer += 4;
 
+            int posAdj = 0;
             for (int i = 0; i < totalEntries; i++)
             {
                 int fileId = BitConverter.ToInt32(bytes, rowsPointer);
@@ -51,25 +54,27 @@ namespace lqr_tool
                 if (!isEnabled)
                 {
                     Console.WriteLine("DELETED/UNUSED ENTRY");
+                    posAdj += 1;
                     continue;
                 }
 
-                for (int j = 0; j < columnTypes.Length; j++)
+                Console.WriteLine(tableText[headings.HeadingIndices[i - posAdj]]);
+                for (int j = 0; j < columns.ColumnDataTypes.Length; j++)
                 {
-                    if (columnTypes[j] == 0)
+                    if (columns.ColumnDataTypes[j] == 0)
                     {
-                        Console.WriteLine("col type 0: " + BitConverter.ToInt32(bytes, rowsPointer));
+                        Console.WriteLine(tableText[headings.GetColumnHeading(j)] + ": " + BitConverter.ToInt32(bytes, rowsPointer));
                         rowsPointer += 4;
                     }
-                    else if (columnTypes[j] == 1)
+                    else if (columns.ColumnDataTypes[j] == 1)
                     {
-                        Console.WriteLine("col type 1: " + BitConverter.ToSingle(bytes, rowsPointer));
+                        Console.WriteLine(tableText[headings.GetColumnHeading(j)] + ": " + BitConverter.ToSingle(bytes, rowsPointer));
                         rowsPointer += 4;
                     }
-                    else if (columnTypes[j] == 2)
+                    else if (columns.ColumnDataTypes[j] == 2)
                     {
                         byte unknownByte = bytes[rowsPointer];
-                        Console.WriteLine("unknown spacer?: " + unknownByte);
+                        //Console.WriteLine("unknown spacer?: " + unknownByte);
                         rowsPointer += 1;
                         if (unknownByte > 0)
                         {
@@ -78,21 +83,21 @@ namespace lqr_tool
 
                         int charsInFollowingString2 = BitConverter.ToInt32(bytes, rowsPointer);
                         rowsPointer += 4;
-                        Console.WriteLine("characterCount: " + charsInFollowingString2);
+                        //Console.WriteLine("characterCount: " + charsInFollowingString2);
                         byte[] fileName2 = new byte[charsInFollowingString2 * 2];
                         Array.Copy(bytes, rowsPointer, fileName2, 0, charsInFollowingString2 * 2);
-                        Console.WriteLine(GetUnicode(fileName2));
+                        Console.WriteLine(tableText[headings.GetColumnHeading(j)] + ": " + GetUnicode(fileName2));
                         rowsPointer += charsInFollowingString2 * 2;
                     }
-                    else if (columnTypes[j] == 3)
+                    else if (columns.ColumnDataTypes[j] == 3)
                     {
-                        Console.WriteLine("col type 3: " + BitConverter.ToInt32(bytes, rowsPointer));
+                        Console.WriteLine(tableText[headings.GetColumnHeading(j)] + ": " + BitConverter.ToInt32(bytes, rowsPointer));
                         rowsPointer += 4;
                     }
-                    else if (columnTypes[j] == 4)
+                    else if (columns.ColumnDataTypes[j] == 4)
                     {
                         byte unknownByte = bytes[rowsPointer];
-                        Console.WriteLine("unknown spacer?: " + unknownByte);
+                        //Console.WriteLine("unknown spacer?: " + unknownByte);
                         rowsPointer += 1;
                         if (unknownByte > 0)
                         {
@@ -101,88 +106,119 @@ namespace lqr_tool
 
                         int charsInFollowingString2 = BitConverter.ToInt32(bytes, rowsPointer);
                         rowsPointer += 4;
-                        Console.WriteLine("characterCount: " + charsInFollowingString2);
+                        //Console.WriteLine("characterCount: " + charsInFollowingString2);
                         byte[] fileName2 = new byte[charsInFollowingString2 * 2];
                         Array.Copy(bytes, rowsPointer, fileName2, 0, charsInFollowingString2 * 2);
-                        Console.WriteLine(GetUnicode(fileName2));
+                        Console.WriteLine(tableText[headings.GetColumnHeading(j)] + ": " + GetUnicode(fileName2));
                         rowsPointer += charsInFollowingString2 * 2;
                     }
                 }
             }
 
-            // ROW AND COLUMN TEXT INDICES
-            int afterPointer = (int)afterOffset;
-
-            // block of five flags? typically 0 or 1
-            Console.WriteLine("\n" + bytes[afterPointer]);
-            afterPointer += 1;
-            Console.WriteLine(bytes[afterPointer]);
-            afterPointer += 1;
-            Console.WriteLine(bytes[afterPointer]);
-            afterPointer += 1;
-            Console.WriteLine(bytes[afterPointer]);
-            afterPointer += 1;
-            Console.WriteLine(bytes[afterPointer]);
-            afterPointer += 1;
-
-            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
-            afterPointer += 4;
-            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
-            afterPointer += 4;
-            Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
-            afterPointer += 4;
-            int usedEntries2 = BitConverter.ToInt32(bytes, afterPointer);
-            Console.WriteLine("usedEntries: " + usedEntries2); // this + no of columns indicates integers to read in this section
-            afterPointer += 4;
-            int noColumns2 = BitConverter.ToInt32(bytes, afterPointer);
-            Console.WriteLine("numberOfColumns: " + noColumns2); // this + used entries indicates integers to read in this section
-            afterPointer += 4;
-            for (int i = 0; i < (usedEntries2 + noColumns2); i++)
-            {
-                Console.WriteLine(BitConverter.ToInt32(bytes, afterPointer));
-                afterPointer += 4;
-            }
-
             // NEXT BIT 2
-            // 1 byte followed by a lot of integers?
-            int unknown1Pointer = (int)unknownOffset1;
+            // Most of this section is telling the program where to get the text for certain bits of the UI e.g. form heading
+            // Seems to start with the columns
+            // Then unknown
+            int unknown1Pointer = (int)header.UiOffset;
 
-            Console.WriteLine("\n" + bytes[unknown1Pointer]); // External tool converter flag?
+            byte hasConverter = bytes[unknown1Pointer];
+            Console.WriteLine("\nhasConverter: " + hasConverter); // External tool converter flag
             unknown1Pointer += 1;
-            while (unknown1Pointer != textOffset)
+
+            while (unknown1Pointer != header.TextOffset)
             {
                 int unknown = BitConverter.ToInt32(bytes, unknown1Pointer);
                 Console.WriteLine(unknown);
-                if (unknown == 0xFFFF)
+                if (unknown == -1)
                 {
-                    Console.WriteLine("\n");
+                    Console.Write("\n");
                 }
                 unknown1Pointer += 4;
             }
 
-            // TEXT
-            int textPointer = (int)textOffset;
+            Console.ReadKey();
+        }
 
-            int textCount = BitConverter.ToInt32(bytes, textPointer);
-            Console.WriteLine("\ntextCount: " + textCount);
-            textPointer += 4;
-            int byteCount = BitConverter.ToInt32(bytes, textPointer);
-            Console.WriteLine("byteCount: " + byteCount);
-            textPointer += 4;
+        static Header ReadHeader(byte[] file)
+        {
+            Header header = new Header();
+            header.Unknown1 = BitConverter.ToInt32(file, 0); // always 106
+            header.Unknown2 = BitConverter.ToInt32(file, 4); // checksum?
+            header.ColumnOffset = BitConverter.ToInt64(file, 8);
+            header.HeadingOffset = BitConverter.ToInt64(file, 16);
+            header.UiOffset = BitConverter.ToInt64(file, 24);
+            header.TextOffset = BitConverter.ToInt64(file, 32);
+            header.RowsOffset = BitConverter.ToInt64(file, 40);
+            return header;
+        }
 
-            string[] strings = new string[textCount];
+        static ColumnDefinition ReadColumnDefinitions(int pointer, byte[] file)
+        {
+            int columnCount = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            ColumnDefinition columns = new ColumnDefinition(columnCount);
+            for (int i = 0; i < columnCount; i++)
+            {
+                columns.ColumnDataTypes[i] = BitConverter.ToInt32(file, pointer + (4 * i));
+            }
+            return columns;
+        }
+
+        static Headings ReadHeadings(int pointer, byte[] file)
+        {
+            Headings headings = new Headings();
+            // block of five flags? typically 0 or 1
+            headings.Flag1 = file[pointer];
+            pointer += 1;
+            headings.Flag2 = file[pointer];
+            pointer += 1;
+            headings.Flag3 = file[pointer];
+            pointer += 1;
+            headings.Flag4 = file[pointer];
+            pointer += 1;
+            headings.Flag5 = file[pointer];
+            pointer += 1;
+
+            headings.BlankIndex = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            headings.PrefixIndex = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            headings.NameIndex = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+
+            int usedRows = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            int columnCount = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            headings.SetHeadingCount(usedRows, columnCount);
+            for (int i = 0; i < headings.HeadingIndices.Length; i++)
+            {
+                headings.HeadingIndices[i] = BitConverter.ToInt32(file, pointer);
+                pointer += 4;
+            }
+            return headings;
+        }
+
+        static string[] ReadTableText(int pointer, byte[] file)
+        {
+            int textCount = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+            int byteCount = BitConverter.ToInt32(file, pointer);
+            pointer += 4;
+
+            string[] tableText = new string[textCount];
             for (int i = 0; i < textCount; i++)
             {
                 string newString = "";
                 bool isTerminator = false;
                 while (!isTerminator)
                 {
-                    char character = BitConverter.ToChar(bytes, textPointer);
-                    textPointer += 2;
+                    char character = BitConverter.ToChar(file, pointer);
+                    pointer += 2;
                     if (character == '\0')
                     {
                         isTerminator = true;
-                        strings[i] = newString;
+                        tableText[i] = newString;
                         continue;
                     }
                     else
@@ -190,10 +226,8 @@ namespace lqr_tool
                         newString += character;
                     }
                 }
-                Console.WriteLine(i + ": " + newString);
             }
-
-            Console.ReadKey();
+            return tableText;
         }
 
         private static string GetUnicode(byte[] bytes)
